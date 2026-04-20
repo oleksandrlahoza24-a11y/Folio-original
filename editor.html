@@ -6,6 +6,19 @@
 <meta name="description" content="Folio Editor — Write beautifully.">
 <title>Folio</title>
 <link rel="stylesheet" href="style.css">
+<style>
+/* ---- EMAIL SHARE TAB EXTRAS ---- */
+.share-email-row {
+  display: flex; gap: 8px; margin-bottom: 10px;
+}
+.share-email-row input {
+  flex: 1; padding: 10px 13px; border: 1px solid var(--divider); border-radius: 10px;
+  background: var(--card-bg); font-family: 'DM Sans', sans-serif; font-size: 14px;
+  color: var(--ink); outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.share-email-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.share-note { font-size: 12px; color: var(--ink-3); line-height: 1.6; margin-bottom: 0; }
+</style>
 
 <!-- Firebase compat SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -52,7 +65,7 @@
   </div>
 </div>
 
-<!-- VIEW-ONLY BANNER (shown for shared docs, hidden by default) -->
+<!-- VIEW-ONLY BANNER -->
 <div id="view-banner" style="display:none;">
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2C4 2 1.5 5 1.5 7c0 2 2.5 5 5.5 5s5.5-3 5.5-5c0-2-2.5-5-5.5-5Z" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="2" fill="currentColor"/></svg>
   <span class="view-banner-text" id="view-banner-text"><strong>View only</strong> — this is a shared document</span>
@@ -65,7 +78,6 @@
 <!-- TOOLBAR -->
 <div id="toolbar-wrap">
   <div id="toolbar">
-    <!-- Undo / Redo -->
     <button class="tb-btn" title="Undo (Ctrl+Z)" onclick="exec('undo')">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 7.5H10C11.933 7.5 13.5 9.067 13.5 11 13.5 12.933 11.933 14.5 10 14.5H7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M5.5 5L3 7.5L5.5 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
@@ -74,7 +86,6 @@
     </button>
     <div class="tb-divider"></div>
 
-    <!-- Font & Size -->
     <select class="tb-select" id="font-select" title="Font family" onchange="changeFont(this.value)" style="width:96px">
       <option value="'Lora',serif">Lora</option>
       <option value="'DM Sans',sans-serif">DM Sans</option>
@@ -86,7 +97,6 @@
     <input id="font-size-input" type="number" min="8" max="96" value="17" title="Font size" onchange="changeFontSize(this.value)">
     <div class="tb-divider"></div>
 
-    <!-- Style Buttons -->
     <button class="tb-btn" id="btn-bold" title="Bold (Ctrl+B)" onclick="exec('bold')">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3.5 7H8.5C9.881 7 11 8.119 11 9.5 11 10.881 9.881 12 8.5 12H3.5V7ZM3.5 7H7.5C8.881 7 10 5.881 10 4.5 10 3.119 8.881 2 7.5 2H3.5V7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
@@ -100,19 +110,18 @@
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7H12M5 4.5C5 3.119 5.895 2 7 2 8.105 2 9 2.895 9 3.5M5 9.5C5 10.881 5.895 12 7 12 8.105 12 9 11.105 9 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     </button>
 
-    <!-- Colors -->
-    <button class="tb-btn" id="color-btn" title="Text color" onclick="document.getElementById('text-color-picker').click()">
+    <!-- FIX: saveSelection() called on mousedown via the hidden input click path -->
+    <button class="tb-btn" id="color-btn" title="Text color" onclick="saveSelection();document.getElementById('text-color-picker').click()">
       <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1L10 10H3L6.5 1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M4 7.5H9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
       <div id="color-indicator"></div>
       <input type="color" id="text-color-picker" onchange="applyTextColor(this.value)">
     </button>
-    <button class="tb-btn" title="Highlight" onclick="document.getElementById('highlight-color-picker').click()">
+    <button class="tb-btn" title="Highlight" onclick="saveSelection();document.getElementById('highlight-color-picker').click()">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 12H12M8.5 2.5L11.5 5.5 6 11H3V8L8.5 2.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
       <input type="color" id="highlight-color-picker" value="#fef08a" onchange="applyHighlight(this.value)">
     </button>
     <div class="tb-divider"></div>
 
-    <!-- Headings -->
     <select class="tb-select" id="heading-select" title="Paragraph style" onchange="applyHeading(this.value)" style="width:90px">
       <option value="p">Body</option>
       <option value="h1">Heading 1</option>
@@ -123,7 +132,6 @@
     </select>
     <div class="tb-divider"></div>
 
-    <!-- Align -->
     <button class="tb-btn" id="btn-justifyLeft" title="Align left" onclick="exec('justifyLeft')">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3H12M2 7H9M2 11H12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
     </button>
@@ -135,7 +143,6 @@
     </button>
     <div class="tb-divider"></div>
 
-    <!-- Lists -->
     <button class="tb-btn" id="btn-insertUnorderedList" title="Bullet list" onclick="exec('insertUnorderedList')">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="3" cy="4" r="1.2" fill="currentColor"/><circle cx="3" cy="7.5" r="1.2" fill="currentColor"/><circle cx="3" cy="11" r="1.2" fill="currentColor"/><path d="M6 4H13M6 7.5H13M6 11H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
     </button>
@@ -150,7 +157,6 @@
     </button>
     <div class="tb-divider"></div>
 
-    <!-- Insert -->
     <button class="tb-btn" title="Insert link (Ctrl+K)" onclick="insertLink()">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M5.5 9.5L9.5 5.5M8 4L9.172 2.828C9.953 2.047 11.219 2.047 12 2.828 12.781 3.609 12.781 4.875 12 5.656L10.828 6.828M6 9.172L4.828 10.344C4.047 11.125 2.781 11.125 2 10.344 1.219 9.563 1.219 8.297 2 7.516L3.172 6.344" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
     </button>
@@ -165,7 +171,6 @@
     </button>
     <div class="tb-divider"></div>
 
-    <!-- Misc -->
     <button class="tb-btn" title="Find & Replace (Ctrl+F)" onclick="toggleFind()">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="6.5" cy="6.5" r="4" stroke="currentColor" stroke-width="1.3"/><path d="M9.5 9.5L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     </button>
@@ -215,19 +220,43 @@
   <span class="stat clickable" onclick="openGoalModal()" title="Set word goal" id="goal-stat" style="display:none"><strong id="goal-display">0 / 500</strong> goal</span>
 </div>
 
-<!-- SHARE MODAL -->
+<!-- SHARE MODAL — with Copy Link + Invite by Email tabs -->
 <div class="modal-overlay" id="share-modal">
   <div class="modal">
     <h3>Share document</h3>
-    <p>Copy this link to share your document. It contains the full content — open it in any browser, including for Google Classroom submissions.</p>
-    <div class="modal-link-box">
-      <input type="text" id="share-url-input" readonly placeholder="Generating link…">
-      <button class="pill-btn primary" onclick="copyShareLink()">Copy</button>
+
+    <!-- Tabs -->
+    <div class="img-upload-tabs" style="margin-bottom:18px">
+      <button class="img-tab active" id="share-tab-link" onclick="switchShareTab('link')">Copy link</button>
+      <button class="img-tab" id="share-tab-email" onclick="switchShareTab('email')">Invite by email</button>
     </div>
-    <div class="modal-section">
-      <label>Google Classroom tip</label>
-      <p style="font-size:12px;color:var(--ink-3);margin-bottom:0;line-height:1.6">Paste the link above as a <strong style="color:var(--ink-2)">Link</strong> submission in Google Classroom. Recipients click the link to view the full, styled document — no login required.</p>
+
+    <!-- Link panel -->
+    <div id="share-panel-link">
+      <p>Copy this link to share your document. Anyone with the link can view it — no login required.</p>
+      <div class="modal-link-box">
+        <input type="text" id="share-url-input" readonly placeholder="Generating link…">
+        <button class="pill-btn primary" onclick="copyShareLink()">Copy</button>
+      </div>
+      <div class="modal-section">
+        <label>Google Classroom tip</label>
+        <p style="font-size:12px;color:var(--ink-3);margin-bottom:0;line-height:1.6">Paste the link above as a <strong style="color:var(--ink-2)">Link</strong> submission in Google Classroom. Recipients click the link to view the full, styled document.</p>
+      </div>
     </div>
+
+    <!-- Email panel -->
+    <div id="share-panel-email" style="display:none;">
+      <p>Enter an email address and we'll open your mail app with the share link ready to send.</p>
+      <div class="share-email-row">
+        <input type="email" id="share-email-input" placeholder="friend@example.com" onkeydown="if(event.key==='Enter')sendShareEmail()">
+        <button class="pill-btn primary" onclick="sendShareEmail()">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 2.5h10l-4.5 5v4l-1-1V7.5L1.5 2.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          Send
+        </button>
+      </div>
+      <p class="share-note">This opens your default email app (e.g. Gmail, Outlook, Apple Mail) with the link pre-filled. Nothing is sent automatically from Folio.</p>
+    </div>
+
     <div class="modal-actions">
       <button class="pill-btn" onclick="closeModal('share-modal')">Done</button>
     </div>
@@ -275,7 +304,6 @@
       <button class="img-tab active" id="img-tab-upload" onclick="switchImgTab('upload')">Upload file</button>
       <button class="img-tab" id="img-tab-url" onclick="switchImgTab('url')">Image URL</button>
     </div>
-    <!-- Upload panel -->
     <div id="img-panel-upload">
       <div class="img-upload-drop" id="img-drop-zone" onclick="document.getElementById('img-file-input').click()" ondragover="imgDragOver(event)" ondragleave="imgDragLeave(event)" ondrop="imgDrop(event)">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M14 4v14M8 10l6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 20v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -284,7 +312,6 @@
       </div>
       <input type="file" id="img-file-input" accept="image/*" onchange="imgFileSelected(event)">
     </div>
-    <!-- URL panel -->
     <div id="img-panel-url" style="display:none;">
       <input type="url" class="modal-field" id="img-url-input" placeholder="https://example.com/image.jpg">
     </div>
@@ -368,6 +395,49 @@ let wordGoal = 0;
 let findMatches = [];
 let findIndex = 0;
 
+/* =====================================================
+   BUG FIX 1 — PRESERVE SELECTION ON TOOLBAR CLICKS
+   Prevent mousedown on every toolbar control from
+   stealing focus (and wiping the selection) from the
+   contenteditable editor. The click still fires normally.
+   ===================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+  const toolbar = document.getElementById('toolbar');
+  if (!toolbar) return;
+  toolbar.addEventListener('mousedown', e => {
+    // Allow mousedown on the actual hidden color inputs so
+    // the native picker can still open, but block everything else.
+    if (e.target.type === 'color') return;
+    e.preventDefault();
+  });
+});
+
+/* =====================================================
+   BUG FIX 2 — SAVE / RESTORE SELECTION FOR COLOR PICKERS
+   The native <input type="color"> opens an OS dialog
+   asynchronously. By the time it fires onchange the
+   editor has lost focus and the selection is gone.
+   We snapshot the range on demand and restore it.
+   ===================================================== */
+let savedRange = null;
+
+function saveSelection() {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) {
+    savedRange = sel.getRangeAt(0).cloneRange();
+  } else {
+    savedRange = null;
+  }
+}
+
+function restoreSelection() {
+  if (!savedRange) return;
+  editor.focus();
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(savedRange);
+}
+
 /* ---- READ-ONLY MODE ---- */
 let sharedDocOwnerId = null;
 
@@ -377,7 +447,6 @@ function enterViewMode(ownerUid) {
   editor.contentEditable = 'false';
   titleInput.readOnly = true;
   document.getElementById('view-banner').style.display = 'flex';
-  // Check ownership now (in case auth already fired)
   updateOwnerEditBtn();
 }
 
@@ -404,7 +473,6 @@ function enterEditMode() {
 
 /* ---- LOAD DOCUMENT ---- */
 function loadDocument() {
-  // Check URL for shared document first
   const params = new URLSearchParams(window.location.search);
   const encoded = params.get('d');
   if (encoded) {
@@ -422,16 +490,12 @@ function loadDocument() {
       document.title = (data.title || 'Untitled') + ' — Folio';
       updateCounts();
       showToast('Shared document loaded ✓');
-      // Remove ?d= from URL so we don't reload from it
       history.replaceState({}, '', window.location.pathname);
-      // Enter view-only mode — owner check happens in auth listener
       enterViewMode(data.ownerId || null);
-      // Don't save to storage for shared docs
       return;
     } catch(e) { console.warn('Could not decode shared doc:', e); }
   }
 
-  // Load from storage
   docId = getCurrentDocId();
   if (docId) {
     const doc = getDoc(docId);
@@ -443,7 +507,6 @@ function loadDocument() {
       return;
     }
   }
-  // No doc — create one
   docId = createNewDoc();
   setCurrentDocId(docId);
   updateCounts();
@@ -498,7 +561,6 @@ function changeFont(font) {
 function changeFontSize(size) {
   const px = parseInt(size);
   if (isNaN(px) || px < 6 || px > 200) return;
-  // Map px to fontSize 1–7
   const levels = [0, 0, 9, 10, 14, 19, 25, 33, 49];
   let level = 3;
   for (let i = 7; i >= 1; i--) {
@@ -508,12 +570,17 @@ function changeFontSize(size) {
   editor.focus();
 }
 
-/* ---- COLOR ---- */
+/* ---- COLOR (uses save/restore to keep selection alive) ---- */
 function applyTextColor(color) {
+  restoreSelection();
   document.getElementById('color-indicator').style.background = color;
   exec('foreColor', color);
 }
-function applyHighlight(color) { exec('hiliteColor', color); }
+
+function applyHighlight(color) {
+  restoreSelection();
+  exec('hiliteColor', color);
+}
 
 /* ---- HEADING ---- */
 function applyHeading(tag) {
@@ -552,7 +619,6 @@ function confirmInsertLink() {
 }
 
 function insertImage() {
-  // Reset modal state
   switchImgTab('upload');
   document.getElementById('img-url-input').value = '';
   openModal('image-modal');
@@ -595,7 +661,6 @@ function confirmInsertImage() {
     exec('insertHTML', `<img src="${url}" alt="Image" loading="lazy">`);
     closeModal('image-modal');
   }
-  // Upload path handled by imgReadFile on file select
 }
 
 function insertTable() {
@@ -672,11 +737,8 @@ function updateGoalProgress(words) {
   const pct = Math.min(100, (words / wordGoal) * 100);
   document.getElementById('word-goal-progress').style.width = pct + '%';
   document.getElementById('goal-display').textContent = words.toLocaleString() + ' / ' + wordGoal.toLocaleString();
-  if (words >= wordGoal) {
-    document.getElementById('word-goal-progress').style.background = 'var(--success)';
-  } else {
-    document.getElementById('word-goal-progress').style.background = 'var(--accent)';
-  }
+  document.getElementById('word-goal-progress').style.background =
+    words >= wordGoal ? 'var(--success)' : 'var(--accent)';
 }
 
 /* ---- FOCUS MODE ---- */
@@ -775,7 +837,11 @@ function replaceAll() {
 }
 
 /* ---- SHARE ---- */
-function openShare() {
+
+// Build and cache the share URL so both tabs can use it
+let _cachedShareUrl = '';
+
+function buildShareUrl() {
   autoSave();
   const ownerId = (currentUser && currentUser.uid) ? currentUser.uid : null;
   const data = { title: titleInput.value, html: editor.innerHTML, ownerId };
@@ -788,8 +854,14 @@ function openShare() {
   } catch(e) {
     encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(data)))));
   }
-  const url = window.location.origin + window.location.pathname + '?d=' + encoded;
-  document.getElementById('share-url-input').value = url;
+  return window.location.origin + window.location.pathname + '?d=' + encoded;
+}
+
+function openShare() {
+  _cachedShareUrl = buildShareUrl();
+  document.getElementById('share-url-input').value = _cachedShareUrl;
+  // Reset to link tab every time modal opens
+  switchShareTab('link');
   openModal('share-modal');
 }
 
@@ -799,6 +871,39 @@ function copyShareLink() {
   navigator.clipboard.writeText(input.value)
     .then(() => showToast('Link copied! ✓'))
     .catch(() => { document.execCommand('copy'); showToast('Link copied! ✓'); });
+}
+
+function switchShareTab(tab) {
+  document.getElementById('share-panel-link').style.display  = tab === 'link'  ? 'block' : 'none';
+  document.getElementById('share-panel-email').style.display = tab === 'email' ? 'block' : 'none';
+  document.getElementById('share-tab-link').classList.toggle('active',  tab === 'link');
+  document.getElementById('share-tab-email').classList.toggle('active', tab === 'email');
+  if (tab === 'email') {
+    setTimeout(() => document.getElementById('share-email-input').focus(), 60);
+  }
+}
+
+function sendShareEmail() {
+  const emailEl = document.getElementById('share-email-input');
+  const to = emailEl.value.trim();
+
+  if (!to) { showToast('Please enter an email address'); emailEl.focus(); return; }
+  // Simple email format check
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+    showToast('Please enter a valid email address');
+    emailEl.focus();
+    return;
+  }
+
+  const docTitle = titleInput.value || 'Untitled document';
+  const subject  = encodeURIComponent(`"${docTitle}" shared with you on Folio`);
+  const body     = encodeURIComponent(
+    `Hi,\n\nI wanted to share this document with you: "${docTitle}"\n\nOpen it here:\n${_cachedShareUrl}\n\nNo login required — just click the link.\n\nShared via Folio`
+  );
+
+  window.location.href = `mailto:${encodeURIComponent(to)}?subject=${subject}&body=${body}`;
+  showToast('Opening your mail app… ✓');
+  emailEl.value = '';
 }
 
 /* ---- EXPORT ---- */
@@ -811,9 +916,6 @@ function exportHTML() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="${title} — Created with Folio">
-<meta property="og:title" content="${title}">
-<meta property="og:description" content="A document created with Folio.">
 <title>${title}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Playfair+Display:wght@600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
 <style>
@@ -927,13 +1029,12 @@ document.addEventListener('keydown', e => {
   }
 });
 
-/* ---- PASTE: clean up HTML, preserve text ---- */
+/* ---- PASTE: clean up HTML ---- */
 editor.addEventListener('paste', e => {
   e.preventDefault();
   const html = e.clipboardData.getData('text/html');
   const text = e.clipboardData.getData('text/plain');
   if (html) {
-    // Strip dangerous attributes and tags but keep structure
     const div = document.createElement('div');
     div.innerHTML = html;
     div.querySelectorAll('script,style,meta,link,iframe').forEach(el => el.remove());
@@ -969,7 +1070,6 @@ document.addEventListener('touchend', e => {
 /* ---- INIT ---- */
 document.addEventListener('DOMContentLoaded', () => {
   loadDocument();
-  // Restore word goal
   const savedGoal = parseInt(localStorage.getItem('folio_word_goal')) || 0;
   if (savedGoal > 0) {
     wordGoal = savedGoal;
@@ -977,17 +1077,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('goal-stat').style.display = '';
     updateCounts();
   }
-  // Logo animation
   setTimeout(() => {
     document.querySelectorAll('.folio-logo-mark svg').forEach(el => el.classList.add('logo-animate'));
   }, 200);
 });
 
-// Auth listener — update owner edit button when user signs in/out
 document.addEventListener('folio:auth', e => {
-  if (sharedDocOwnerId !== null) {
-    updateOwnerEditBtn();
-  }
+  if (sharedDocOwnerId !== null) updateOwnerEditBtn();
 });
 </script>
 </body>
